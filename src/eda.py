@@ -1,6 +1,6 @@
 """
-Exploratory Data Analysis (EDA) module for All-India Real Estate Engine.
-Generates headless publication-quality diagnostic charts in outputs/charts/.
+Exploratory Data Analysis (EDA) module for Indian Real Estate dataset.
+Generates diagnostic charts in outputs/charts/.
 """
 
 import sys
@@ -142,7 +142,9 @@ def run_eda(df: pd.DataFrame) -> None:
         y=TARGET,
         data=bhk_subset[bhk_subset[TARGET] <= 400],
         ax=axes[0, 0],
+        hue="BHK_NO",
         palette="Blues_r",
+        legend=False,
     )
     axes[0, 0].set_title("Price Distribution by BHK Configuration", fontsize=12, fontweight="bold")
     axes[0, 0].set_xlabel("Number of Bedrooms (BHK)", fontsize=10)

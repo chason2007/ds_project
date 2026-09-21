@@ -34,7 +34,7 @@ def explain_model(
     feature_names: List[str],
 ) -> pd.DataFrame:
     """
-    Computes global feature importances and SHAP values for the champion model:
+    Computes global feature importances and SHAP values for the best trained model:
       - Exports top 20 features to outputs/powerbi_data/feature_importance.csv.
       - Renders horizontal bar chart in outputs/charts/feature_importance_top20.png.
       - Generates SHAP summary plot across test samples in outputs/charts/shap_summary.png.
@@ -72,7 +72,9 @@ def explain_model(
         data=top20_df,
         y="Feature",
         x="Importance",
+        hue="Feature",
         palette="viridis_r",
+        legend=False,
         ax=ax,
     )
     ax.set_title("Top 20 Valuation Drivers (XGBoost Feature Importance)", fontsize=13, fontweight="bold")

@@ -51,7 +51,7 @@ def train_and_evaluate(
     feature_names: list,
 ) -> Tuple[Any, Any, Any, pd.DataFrame]:
     """
-    Trains multiple models, evaluates CV and test set performance, selects the champion,
+    Trains multiple models, evaluates CV and test set performance, selects the best model,
     and fits quantile prediction interval models (10th & 90th percentiles).
 
     Returns:
@@ -129,17 +129,17 @@ def train_and_evaluate(
     metrics_df.to_csv(metrics_path, index=False)
     logger.info(f"Saved model metrics to {metrics_path}")
 
-    # Identify champion based on Test R2
+    # Identify best performing model based on Test R2
     best_model_name = metrics_df.sort_values(by="Test_R2", ascending=False).iloc[0]["Model"]
     best_model = trained_models[best_model_name]
-    logger.info(f"Champion Model selected: {best_model_name}")
+    logger.info(f"Best model selected: {best_model_name}")
 
-    # Save champion model & feature column contract
+    # Save best model & feature column contract
     best_model_path = MODELS_DIR / "best_model.joblib"
     features_path = MODELS_DIR / "model_feature_columns.joblib"
     joblib.dump(best_model, best_model_path)
     joblib.dump(feature_names, features_path)
-    logger.info(f"Saved champion model to {best_model_path} and features to {features_path}")
+    logger.info(f"Saved best model to {best_model_path} and features to {features_path}")
 
     # Train Quantile Regressors for asymmetric 80% Prediction Interval (10th & 90th percentiles)
     logger.info("Training Quantile Interval Regressors (alpha=0.10 and alpha=0.90)...")
@@ -182,7 +182,7 @@ def _generate_training_plots(
     metrics_df: pd.DataFrame,
     y_test: pd.Series,
     y_pred: np.ndarray,
-    champion_name: str,
+    model_name: str,
 ) -> None:
     """
     Renders and saves 3 model evaluation diagnostic plots.
@@ -215,7 +215,7 @@ def _generate_training_plots(
     ax.scatter(y_test[mask], y_pred[mask], alpha=0.35, color="#1f77b4", edgecolors="none", s=20)
     max_val = 600
     ax.plot([0, max_val], [0, max_val], color="crimson", linestyle="--", linewidth=1.5, label="Perfect Agreement (y = x)")
-    ax.set_title(f"Actual vs. Predicted Property Price ({champion_name})", fontsize=13, fontweight="bold")
+    ax.set_title(f"Actual vs. Predicted Property Price ({model_name})", fontsize=13, fontweight="bold")
     ax.set_xlabel("Actual Price (₹ in Lakhs)", fontsize=11)
     ax.set_ylabel("Predicted Price (₹ in Lakhs)", fontsize=11)
     ax.set_xlim(0, max_val)
