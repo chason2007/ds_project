@@ -485,28 +485,41 @@ with tab3:
     val_idx_df = load_valuation_index()
 
     if not val_idx_df.empty and "City" in val_idx_df.columns:
-        top6_chart = CHARTS_DIR / "valuation_index_top6.png"
-        if top6_chart.exists():
-            st.image(str(top6_chart), caption="Valuation Index across BHK Tiers (Top 6 Metros)", use_container_width=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        f_col1, f_col2, f_col3 = st.columns([2, 1, 2])
+        f_col1, f_col2, f_col3 = st.columns([3, 2, 2])
         available = sorted(val_idx_df["City"].unique().tolist())
         sel_cities = f_col1.multiselect("Filter Cities", available, default=[c for c in ["Bangalore", "Mumbai", "Pune", "Noida", "Kolkata", "Chennai"] if c in available])
         sel_bhk = f_col2.multiselect("Filter BHK", [1, 2, 3, 4, 5], default=[1, 2, 3, 4])
-        query = f_col3.text_input("Search city name", placeholder="Type city...")
+        metric_choice = f_col3.selectbox("Comparison Metric", ["Valuation Index (Base 100)", "Average Rate (₹/SqFt)", "Median Price (₹ Lakhs)"])
+
+        metric_col_map = {
+            "Valuation Index (Base 100)": "ValuationIndex",
+            "Average Rate (₹/SqFt)": "AvgPricePerSqFt",
+            "Median Price (₹ Lakhs)": "MedianPrice_Lakhs",
+        }
+        active_metric_col = metric_col_map[metric_choice]
 
         filtered = val_idx_df.copy()
         if sel_cities:
             filtered = filtered[filtered["City"].isin(sel_cities)]
         if sel_bhk:
             filtered = filtered[filtered["BHK_NO"].isin(sel_bhk)]
+
+        # Interactive dynamic multi-series line chart
+        if not filtered.empty and sel_cities:
+            piv = filtered.pivot_table(index="BHK_NO", columns="City", values=active_metric_col, aggfunc="mean")
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.subheader(f"Interactive Comparison: {metric_choice} by BHK")
+            st.caption("Hover over lines to view values. Chart updates live when cities or BHK filters change.")
+            st.line_chart(piv)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        query = st.text_input("Filter table by city name:", placeholder="Search city...")
+        display_filtered = filtered.copy()
         if query.strip():
-            filtered = filtered[filtered["City"].str.contains(query.strip(), case=False, na=False)]
+            display_filtered = display_filtered[display_filtered["City"].str.contains(query.strip(), case=False, na=False)]
 
         st.dataframe(
-            filtered,
+            display_filtered,
             use_container_width=True,
             column_config={
                 "City": "City",
@@ -587,13 +600,30 @@ with tab5:
 
         st.markdown("<br>", unsafe_allow_html=True)
         col_c1, col_c2 = st.columns(2)
-        comp_img = CHARTS_DIR / "model_comparison.png"
-        act_img = CHARTS_DIR / "actual_vs_predicted.png"
+        with col_c1:
+            st.subheader("R² Score Benchmark")
+            st.caption("Test R² vs. 5-Fold Cross-Validation R²:")
+            st.bar_chart(metrics_df.set_index("Model")[["Test_R2", "CV_R2_Mean"]])
 
-        if comp_img.exists():
-            col_c1.image(str(comp_img), caption="Model Comparison", use_container_width=True)
-        if act_img.exists():
-            col_c2.image(str(act_img), caption="Actual vs. Predicted Prices", use_container_width=True)
+        with col_c2:
+            st.subheader("Error Comparison (₹ Lakhs)")
+            st.caption("Root Mean Squared Error (RMSE) vs. Mean Absolute Error (MAE):")
+            st.bar_chart(metrics_df.set_index("Model")[["RMSE", "MAE"]])
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        preds_df = load_predictions()
+        if not preds_df.empty:
+            st.subheader("Interactive Actual vs. Predicted Prices (Test Set)")
+            st.caption("Hover over data points to inspect property predictions. Color-coded by city, sized by square footage.")
+            clean_preds = preds_df[(preds_df["ActualPrice"] <= 400) & (preds_df["PredictedPrice"] <= 400)]
+            sample_preds = clean_preds.sample(n=min(800, len(clean_preds)), random_state=42)
+            st.scatter_chart(
+                sample_preds,
+                x="ActualPrice",
+                y="PredictedPrice",
+                color="City",
+                size="SQUARE_FT",
+            )
     else:
         st.warning("Model metrics not found. Run the training pipeline first.")
 
@@ -603,20 +633,24 @@ with tab5:
 # -----------------------------------------------------------------------------
 with tab6:
     st.subheader("Feature Importance & Explainability")
-    st.caption("Global feature importance and SHAP TreeExplainer summary plots.")
+    st.caption("Global feature importance weights and SHAP TreeExplainer attribution plots.")
 
-    col_f1, col_f2 = st.columns(2)
-    fi_img = CHARTS_DIR / "feature_importance_top20.png"
-    shap_img = CHARTS_DIR / "shap_summary.png"
-
-    if fi_img.exists():
-        col_f1.image(str(fi_img), caption="Top 20 Features (Gain)", use_container_width=True)
-    if shap_img.exists():
-        col_f2.image(str(shap_img), caption="SHAP Summary Plot", use_container_width=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
     fi_df = load_feature_importance()
     if not fi_df.empty:
+        st.subheader("Top 20 Valuation Drivers (XGBoost Feature Importance)")
+        st.caption("Interactive bar chart: hover over features to view exact split and gain contribution.")
+        st.bar_chart(fi_df.head(20).set_index("Feature")["Importance"])
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    shap_img = CHARTS_DIR / "shap_summary.png"
+    if shap_img.exists():
+        st.subheader("SHAP Feature Attribution (Summary Plot)")
+        st.caption("Displays the direction and magnitude of each feature's impact on property price (in ₹ Lakhs) across test listings.")
+        st.image(str(shap_img), use_container_width=True)
+
+    if not fi_df.empty:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader("Feature Importance Table")
         st.dataframe(fi_df, use_container_width=True)
 
 
