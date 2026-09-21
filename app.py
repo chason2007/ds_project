@@ -125,9 +125,15 @@ with st.sidebar:
     st.header("Property Inputs")
 
     city = st.selectbox("City", sorted(TOP_CITIES), key="city")
-    bhk = st.radio("Bedrooms (BHK)", [1, 2, 3, 4, 5], horizontal=True, key="bhk")
-    layout = st.selectbox("Layout Type", ["BHK", "RK"], key="layout")
-    sqft = st.slider("Area (Sq. Ft.)", min_value=300, max_value=8000, step=25, key="sqft")
+    layout = st.selectbox("Layout Type", ["BHK", "RK"], key="layout", help="BHK: Bedroom-Hall-Kitchen apartment; RK: Room-Kitchen studio apartment.")
+
+    if layout == "BHK":
+        bhk = st.radio("Bedrooms (BHK)", [1, 2, 3, 4, 5], horizontal=True, key="bhk")
+    else:
+        bhk = 1
+        st.caption("RK layout is a single studio room (1 RK). Bedrooms fixed to 1.")
+
+    sqft = st.slider("Area (Sq. Ft.)", min_value=250, max_value=8000, step=25, key="sqft")
     posted_by = st.selectbox("Posted By", ["Dealer", "Owner", "Builder"], key="posted_by")
 
     st.markdown("**Status**")
@@ -178,6 +184,7 @@ with tab1:
     col_p1, col_p2, col_p3, col_p4 = st.columns(4)
     if col_p1.button("Mumbai 2 BHK (950 sqft)", use_container_width=True):
         st.session_state.city = "Mumbai"
+        st.session_state.layout = "BHK"
         st.session_state.bhk = 2
         st.session_state.sqft = 950
         st.session_state.posted_by = "Dealer"
@@ -185,6 +192,7 @@ with tab1:
 
     if col_p2.button("Bangalore 3 BHK (1,650 sqft)", use_container_width=True):
         st.session_state.city = "Bangalore"
+        st.session_state.layout = "BHK"
         st.session_state.bhk = 3
         st.session_state.sqft = 1650
         st.session_state.posted_by = "Dealer"
@@ -192,15 +200,17 @@ with tab1:
 
     if col_p3.button("Gurgaon 4 BHK (2,800 sqft)", use_container_width=True):
         st.session_state.city = "Gurgaon"
+        st.session_state.layout = "BHK"
         st.session_state.bhk = 4
         st.session_state.sqft = 2800
         st.session_state.posted_by = "Builder"
         st.rerun()
 
-    if col_p4.button("Pune 2 BHK (1,050 sqft)", use_container_width=True):
-        st.session_state.city = "Pune"
-        st.session_state.bhk = 2
-        st.session_state.sqft = 1050
+    if col_p4.button("Mumbai 1 RK Studio (450 sqft)", use_container_width=True):
+        st.session_state.city = "Mumbai"
+        st.session_state.layout = "RK"
+        st.session_state.bhk = 1
+        st.session_state.sqft = 450
         st.session_state.posted_by = "Owner"
         st.rerun()
 
@@ -304,8 +314,9 @@ with tab1:
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Cross-city comparison
+        property_label = f"{bhk} BHK" if layout == "BHK" else "1 RK Studio"
         st.subheader("Price Comparison Across Major Cities")
-        st.caption(f"Estimated value of this {bhk} BHK ({sqft:,} sq.ft.) specification in other urban centers:")
+        st.caption(f"Estimated value of this {property_label} ({sqft:,} sq.ft.) specification in other urban centers:")
 
         cities_compare = ["Mumbai", "Bangalore", "Pune", "Noida", "Gurgaon", "Chennai", "Kolkata", "Hyderabad"]
         comp_rows = []
@@ -329,7 +340,7 @@ with tab1:
 
         # Sensitivity curve
         st.subheader(f"Price vs. Area (Sq. Ft.) in {city}")
-        st.caption(f"Predicted price curve and 80% interval bounds for {bhk} BHK units in {city}:")
+        st.caption(f"Predicted price curve and 80% interval bounds for {property_label} units in {city}:")
 
         areas = [600, 900, 1200, 1500, 1800, 2200, 2800, 3500]
         curve_rows = []
