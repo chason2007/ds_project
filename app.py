@@ -34,7 +34,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Minimal, clean typography and spacing
+# Minimal typography and layout styling
 st.markdown(
     """
     <style>
@@ -42,25 +42,6 @@ st.markdown(
         padding-top: 2rem;
         padding-bottom: 2rem;
         max-width: 1050px;
-    }
-    .price-display {
-        font-size: 2.8rem;
-        font-weight: 700;
-        color: #0f172a;
-        line-height: 1.1;
-        margin: 4px 0 8px 0;
-    }
-    .price-sub {
-        font-size: 0.95rem;
-        color: #64748b;
-    }
-    .deal-pill {
-        display: inline-block;
-        padding: 5px 12px;
-        border-radius: 6px;
-        font-size: 0.88rem;
-        font-weight: 600;
-        margin-top: 4px;
     }
     </style>
     """,
@@ -146,17 +127,19 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # =============================================================================
 with tab1:
     if pred:
-        # Main Hero Card: Clean, centered, easy to digest
+        # Main Hero Card: Theme-adaptive native contrast
         with st.container(border=True):
             col_hero, col_deal = st.columns([3, 2])
 
             with col_hero:
                 st.caption(f"{city} • {property_name} • {sqft:,} sq.ft.")
-                st.markdown(f"<div class='price-display'>{pred['formatted_price']}</div>", unsafe_allow_html=True)
-                st.markdown(
-                    f"<div class='price-sub'>Expected Range: <b>{pred['formatted_lower']} – {pred['formatted_upper']}</b><br>Rate: <b>₹ {pred['price_per_sqft']:,.0f}</b> / sq.ft.</div>",
-                    unsafe_allow_html=True,
+                st.metric(
+                    label="Estimated Fair Market Value",
+                    value=pred["formatted_price"],
+                    delta=f"₹ {pred['price_per_sqft']:,.0f} / sqft",
+                    delta_color="off",
                 )
+                st.caption(f"Expected 80% Range: {pred['formatted_lower']} – {pred['formatted_upper']}")
 
             with col_deal:
                 st.caption("Deal Check (Asking Price)")
@@ -180,12 +163,13 @@ with tab1:
                     square_ft=float(sqft),
                 )
 
-                # Color-coded deal pill
-                bg = "#ecfdf5" if "Discount" in deal["verdict"] or "Below" in deal["verdict"] else ("#fffbeb" if "Premium" in deal["verdict"] else ("#fef2f2" if "Overpriced" in deal["verdict"] else "#eff6ff"))
-                fg = "#065f46" if "Discount" in deal["verdict"] or "Below" in deal["verdict"] else ("#92400e" if "Premium" in deal["verdict"] else ("#991b1b" if "Overpriced" in deal["verdict"] else "#1e40af"))
-
-                st.markdown(f"<div class='deal-pill' style='background: {bg}; color: {fg};'>{deal['verdict']}</div>", unsafe_allow_html=True)
-                st.caption(f"Spread: {deal['delta_lakhs']:+.2f}L ({deal['pct_diff']:+.1f}%) • Deal Score: {deal['deal_score']}/100")
+                st.metric(
+                    label=f"Verdict: {deal['verdict']}",
+                    value=f"₹ {deal['asking_price_lakhs']:.2f} L",
+                    delta=f"{deal['delta_lakhs']:+.2f} L ({deal['pct_diff']:+.1f}%)",
+                    delta_color="inverse",
+                )
+                st.caption(f"Deal Score: {deal['deal_score']}/100 • {deal['interval_status']}")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
