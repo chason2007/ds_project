@@ -76,7 +76,7 @@ st.caption("Fair-value price estimates, deal check, and city affordability acros
 # 1. TOP SPECIFICATION CARD (Full-Page Calculator)
 # =============================================================================
 with st.container(border=True):
-    col_c1, col_c2, col_c3 = st.columns([2, 2, 2])
+    col_c1, col_c2 = st.columns([1, 1])
 
     with col_c1:
         city = st.selectbox(
@@ -98,14 +98,29 @@ with st.container(border=True):
             layout = "BHK"
             bhk = int(config_choice.split()[0])
 
-    with col_c3:
-        sqft = st.number_input(
-            "Area (Sq. Ft.)",
-            min_value=250,
-            max_value=8000,
-            value=1250,
+    # Area Range Slider with Exact Size Toggle
+    col_ar1, col_ar2 = st.columns([4, 1])
+    with col_ar1:
+        sqft_range = st.slider(
+            "Area Range (Sq. Ft.)",
+            min_value=300,
+            max_value=5000,
+            value=(1000, 1400),
             step=50,
+            help="Drag both handles to select an area range.",
         )
+    with col_ar2:
+        st.write("")
+        st.write("")
+        exact_mode = st.checkbox("Exact size", value=False, help="Enable to type a single exact area number")
+
+    if exact_mode:
+        exact_sqft = st.number_input("Exact Area (Sq. Ft.)", min_value=250, max_value=8000, value=1250, step=25)
+        min_sqft, max_sqft = exact_sqft, exact_sqft
+    else:
+        min_sqft, max_sqft = sqft_range
+
+    is_range = (min_sqft != max_sqft)
 
     # Optional detailed toggles
     with st.expander("Additional Property Details (Status, RERA, Seller)"):
@@ -123,13 +138,13 @@ with st.container(border=True):
         posted_by = col_ex4.selectbox("Posted By", ["Dealer", "Owner", "Builder"])
 
 
-# Run Model Prediction
+# Run Model Prediction (Min, Max, Midpoint)
 service = IndianValuationService.get_instance()
 try:
-    pred = service.predict(
+    pred_min = service.predict(
         city=city,
         bhk_no=int(bhk),
-        square_ft=float(sqft),
+        square_ft=float(min_sqft),
         posted_by=posted_by,
         bhk_or_rk=layout,
         rera=rera,
@@ -137,54 +152,109 @@ try:
         resale=resale,
         under_construction=under_construction,
     )
+
+    pred_max = service.predict(
+        city=city,
+        bhk_no=int(bhk),
+        square_ft=float(max_sqft),
+        posted_by=posted_by,
+        bhk_or_rk=layout,
+        rera=rera,
+        ready_to_move=ready,
+        resale=resale,
+        under_construction=under_construction,
+    ) if is_range else pred_min
+
+    mid_sqft = (min_sqft + max_sqft) / 2.0
+    pred_mid = service.predict(
+        city=city,
+        bhk_no=int(bhk),
+        square_ft=float(mid_sqft),
+        posted_by=posted_by,
+        bhk_or_rk=layout,
+        rera=rera,
+        ready_to_move=ready,
+        resale=resale,
+        under_construction=under_construction,
+    ) if is_range else pred_min
 except Exception as err:
-    pred = None
+    pred_min, pred_max, pred_mid = None, None, None
     st.error(f"Valuation error: {err}")
 
 
 # =============================================================================
 # 2. INSTANT VALUATION & DEAL RESULT CARD
 # =============================================================================
-if pred:
+if pred_min and pred_max:
     with st.container(border=True):
         col_val, col_deal = st.columns([3, 2])
 
         with col_val:
-            st.caption(f"Estimated for: {city} • {config_choice} • {sqft:,} sq.ft.")
+            area_text = f"{min_sqft:,} – {max_sqft:,} sq.ft." if is_range else f"{min_sqft:,} sq.ft."
+            st.caption(f"Estimated for: {city} • {config_choice} • {area_text}")
+
+            if is_range:
+                val_text = f"{pred_min['formatted_price']} – {pred_max['formatted_price']}"
+                min_rate = min(pred_min['price_per_sqft'], pred_max['price_per_sqft'])
+                max_rate = max(pred_min['price_per_sqft'], pred_max['price_per_sqft'])
+                rate_text = f"₹ {min_rate:,.0f} – ₹ {max_rate:,.0f} / sqft"
+                range_text = f"80% Expected Range: {pred_min['formatted_lower']} – {pred_max['formatted_upper']}"
+            else:
+                val_text = pred_min["formatted_price"]
+                rate_text = f"₹ {pred_min['price_per_sqft']:,.0f} / sqft"
+                range_text = f"80% Expected Range: {pred_min['formatted_lower']} – {pred_min['formatted_upper']}"
+
             st.metric(
                 label="Estimated Fair Market Value",
-                value=pred["formatted_price"],
-                delta=f"₹ {pred['price_per_sqft']:,.0f} / sqft",
+                value=val_text,
+                delta=rate_text,
                 delta_color="off",
             )
-            st.caption(f"80% Confidence Range: {pred['formatted_lower']} – {pred['formatted_upper']}")
+            st.caption(range_text)
 
         with col_deal:
             st.caption("Deal Check (Listing Comparison)")
+            default_asking = float(round(pred_mid["predicted_price_lakhs"], 1))
             asking = st.number_input(
                 "Asking Price (₹ in Lakhs)",
                 min_value=1.0,
                 max_value=5000.0,
-                value=float(round(pred["predicted_price_lakhs"], 1)),
+                value=default_asking,
                 step=1.0,
                 label_visibility="collapsed",
             )
 
             deal = evaluate_deal(
-                predicted_price_lakhs=pred["predicted_price_lakhs"],
+                predicted_price_lakhs=pred_mid["predicted_price_lakhs"],
                 asking_price_lakhs=asking,
-                lower_bound_lakhs=pred["lower_bound_lakhs"],
-                upper_bound_lakhs=pred["upper_bound_lakhs"],
+                lower_bound_lakhs=pred_min["lower_bound_lakhs"],
+                upper_bound_lakhs=pred_max["upper_bound_lakhs"],
                 rera=rera,
                 ready_to_move=ready,
                 resale=resale,
-                square_ft=float(sqft),
+                square_ft=float(mid_sqft),
             )
 
+            if is_range:
+                min_p = pred_min["predicted_price_lakhs"]
+                max_p = pred_max["predicted_price_lakhs"]
+                if asking < min_p:
+                    spread_str = f"₹ {asking - min_p:+.2f}L vs range"
+                    verdict_str = "Below Range (Bargain)"
+                elif min_p <= asking <= max_p:
+                    spread_str = f"Within {min_p:.1f}L – {max_p:.1f}L band"
+                    verdict_str = "Within Fair Range"
+                else:
+                    spread_str = f"₹ {asking - max_p:+.2f}L vs range"
+                    verdict_str = "Above Range (Premium)"
+            else:
+                spread_str = f"{deal['delta_lakhs']:+.2f} L ({deal['pct_diff']:+.1f}%)"
+                verdict_str = deal["verdict"]
+
             st.metric(
-                label=f"Verdict: {deal['verdict']}",
+                label=f"Verdict: {verdict_str}",
                 value=f"₹ {deal['asking_price_lakhs']:.2f} L",
-                delta=f"{deal['delta_lakhs']:+.2f} L ({deal['pct_diff']:+.1f}%)",
+                delta=spread_str,
                 delta_color="inverse",
             )
             st.caption(f"Deal Rating: {deal['deal_score']}/100 • {deal['interval_status']}")
@@ -207,9 +277,9 @@ if pred:
     # -------------------------------------------------------------------------
     with subtab1:
         st.subheader("Financing & Mortgage Planner")
-        st.caption(f"Based on current valuation of {pred['formatted_price']} in {city}:")
+        st.caption(f"Based on valuation of {pred_mid['formatted_price']} in {city}:")
 
-        total_inr = pred["predicted_price_lakhs"] * 100000.0
+        total_inr = pred_mid["predicted_price_lakhs"] * 100000.0
         c_emi1, c_emi2, c_emi3 = st.columns(3)
         down_pct = c_emi1.slider("Down Payment (%)", 10, 50, 20, 5)
         rate_annual = c_emi2.slider("Interest Rate (% p.a.)", 7.0, 11.0, 8.5, 0.25)
@@ -234,7 +304,7 @@ if pred:
     # -------------------------------------------------------------------------
     with subtab2:
         st.subheader("Price in Other Major Cities")
-        st.caption(f"Estimated value of this {config_choice} ({sqft:,} sq.ft.) specification across Indian urban centers:")
+        st.caption(f"Estimated value of this {config_choice} ({area_text}) across Indian urban centers:")
 
         compare_cities = ["Mumbai", "Bangalore", "Pune", "Noida", "Gurgaon", "Chennai", "Kolkata", "Hyderabad"]
         comp_rows = []
@@ -242,7 +312,7 @@ if pred:
             res = service.predict(
                 city=c,
                 bhk_no=int(bhk),
-                square_ft=float(sqft),
+                square_ft=float(mid_sqft),
                 posted_by=posted_by,
                 bhk_or_rk=layout,
                 rera=rera,
