@@ -21,6 +21,11 @@ from src.config import (
     TOP_CITIES,
 )
 from src.predict_service import IndianValuationService
+from src.affordability import (
+    match_affordable_cities,
+    evaluate_deal,
+    get_city_localities_in_budget,
+)
 from src.main import run_pipeline
 
 st.set_page_config(
@@ -87,6 +92,11 @@ def load_predictions() -> pd.DataFrame:
     return pd.read_csv(path) if path.exists() else pd.DataFrame()
 
 
+def load_master_dataset() -> pd.DataFrame:
+    path = POWERBI_DIR / "cleaned_engineered_dataset.csv"
+    return pd.read_csv(path) if path.exists() else pd.DataFrame()
+
+
 # Session state for input presets
 if "city" not in st.session_state:
     st.session_state.city = "Bangalore"
@@ -149,8 +159,9 @@ except Exception as err:
     st.error(f"Prediction error: {err}")
 
 # Tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Price Estimator",
+    "Affordability Matcher",
     "City Price Index",
     "Mortgage Calculator",
     "Model Evaluation",
@@ -239,6 +250,59 @@ with tab1:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # Deal Valuation & Arbitrage Meter
+        st.subheader("Deal Valuation & Arbitrage Meter")
+        st.caption("Evaluate an active listing asking price against estimated fair market value to identify discount opportunities or asking premiums.")
+
+        col_d_in1, col_d_in2 = st.columns([2, 3])
+        with col_d_in1:
+            asking_val = st.number_input(
+                "Listing Asking Price (₹ in Lakhs)",
+                min_value=1.0,
+                max_value=5000.0,
+                value=float(round(pred["predicted_price_lakhs"], 2)),
+                step=1.0,
+                help="Enter the actual asking price for this property to analyze valuation spread and deal rating.",
+            )
+
+        deal_res = evaluate_deal(
+            predicted_price_lakhs=pred["predicted_price_lakhs"],
+            asking_price_lakhs=asking_val,
+            lower_bound_lakhs=pred["lower_bound_lakhs"],
+            upper_bound_lakhs=pred["upper_bound_lakhs"],
+            rera=1 if rera else 0,
+            ready_to_move=1 if ready else 0,
+            resale=1 if resale else 0,
+            square_ft=float(sqft),
+        )
+
+        with col_d_in2:
+            st.markdown(f"**Deal Verdict:** `{deal_res['verdict']}`")
+            st.caption(deal_res["explanation"])
+            st.caption(f"Risk Interval Position: **{deal_res['interval_status']}**")
+
+        dm1, dm2, dm3, dm4 = st.columns(4)
+        dm1.metric("Asking Price", f"₹ {deal_res['asking_price_lakhs']:.2f} L", f"Fair: ₹ {pred['predicted_price_lakhs']:.2f} L")
+        dm2.metric(
+            "Valuation Spread",
+            f"₹ {deal_res['delta_lakhs']:+.2f} L",
+            f"{deal_res['pct_diff']:+.1f}% vs fair",
+            delta_color="inverse",
+        )
+        dm3.metric("Asking Rate / Sq.Ft.", f"₹ {deal_res['asking_rate_sqft']:,.0f}", f"{deal_res['rate_delta_sqft']:+,.0f} diff", delta_color="inverse")
+        dm4.metric("Deal Score", f"{deal_res['deal_score']} / 100", "0 (Overpriced) to 100 (Bargain)")
+
+        # Benchmark comparison bar chart
+        deal_chart_df = pd.DataFrame([
+            {"Benchmark": "Lower 80% Bound", "Price (₹ Lakhs)": pred["lower_bound_lakhs"]},
+            {"Benchmark": "Fair Market Value", "Price (₹ Lakhs)": pred["predicted_price_lakhs"]},
+            {"Benchmark": "Asking Price", "Price (₹ Lakhs)": deal_res["asking_price_lakhs"]},
+            {"Benchmark": "Upper 80% Bound", "Price (₹ Lakhs)": pred["upper_bound_lakhs"]},
+        ]).set_index("Benchmark")
+        st.bar_chart(deal_chart_df["Price (₹ Lakhs)"])
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         # Cross-city comparison
         st.subheader("Price Comparison Across Major Cities")
         st.caption(f"Estimated value of this {bhk} BHK ({sqft:,} sq.ft.) specification in other urban centers:")
@@ -292,9 +356,118 @@ with tab1:
 
 
 # -----------------------------------------------------------------------------
-# TAB 2: City Price Index
+# TAB 2: Affordability Matcher
 # -----------------------------------------------------------------------------
 with tab2:
+    st.subheader("Reverse Affordability & City Matcher")
+    st.caption("Input your target budget and room requirements to identify which Indian cities and micro-markets maximize your purchasing power and floor area.")
+
+    c_b1, c_b2, c_b3, c_b4 = st.columns([3, 2, 2, 2])
+    budget_val = c_b1.slider("Target Budget (₹ in Lakhs)", min_value=15, max_value=350, value=75, step=5)
+    bhk_sel = c_b2.radio("Configuration", [1, 2, 3, 4, 5], index=1, horizontal=True, key="aff_bhk_radio")
+    min_area = c_b3.number_input("Min. Floor Area (Sq.Ft.)", min_value=300, max_value=4000, value=850, step=50)
+    rera_req = c_b4.checkbox("RERA Certified Only", value=False, key="aff_rera_chk")
+
+    master_df = load_master_dataset()
+    if not master_df.empty:
+        aff_cities = match_affordable_cities(
+            master_df,
+            budget_lakhs=budget_val,
+            bhk_no=bhk_sel,
+            min_sqft=min_area,
+            rera_only=rera_req,
+        )
+
+        if not aff_cities.empty:
+            kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+            kpi1.metric("Cities with Inventory", f"{len(aff_cities)} Cities", f"{bhk_sel} BHK >= {min_area} sqft")
+
+            high_aff_count = len(aff_cities[aff_cities["Affordability_Pct"] >= 75.0])
+            kpi2.metric("High Affordability Hubs", f"{high_aff_count} Cities", ">= 75% listings in budget")
+
+            top_sqft_row = aff_cities.iloc[aff_cities["Achievable_SqFt"].argmax()]
+            kpi3.metric("Max Purchasing Space", f"{top_sqft_row['Achievable_SqFt']:,.0f} sq.ft.", f"In {top_sqft_row['City']}")
+
+            # Major metros subset
+            major_names = ["Bangalore", "Pune", "Noida", "Chennai", "Kolkata", "Mumbai", "Gurgaon", "Hyderabad"]
+            metro_sub = aff_cities[aff_cities["City"].isin(major_names)]
+            if not metro_sub.empty:
+                best_metro = metro_sub.sort_values("Affordability_Pct", ascending=False).iloc[0]
+                kpi4.metric("Top Affordable Metro", f"{best_metro['City']}", f"{best_metro['Affordability_Pct']}% affordable")
+            else:
+                kpi4.metric("Average Market Rate", f"₹ {aff_cities['Median_Rate_SqFt'].median():,.0f}/sqft", "Median across cities")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.subheader(f"Purchasing Power Comparison: Achievable Floor Area for ₹ {budget_val} Lakhs")
+            st.caption(f"Estimated square footage a ₹ {budget_val} Lakhs budget can purchase at prevailing median rates across major urban centers:")
+
+            # Metro comparison chart
+            compare_cities = ["Jaipur", "Chandigarh", "Kolkata", "Noida", "Chennai", "Bangalore", "Pune", "Gurgaon", "Mumbai"]
+            metro_chart_data = aff_cities[aff_cities["City"].isin(compare_cities)][["City", "Achievable_SqFt"]].set_index("City")
+            if not metro_chart_data.empty:
+                st.bar_chart(metro_chart_data["Achievable_SqFt"])
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.subheader("City-by-City Inventory & Affordability Breakdown")
+
+            search_query = st.text_input("Filter city results by name:", placeholder="e.g. Bangalore, Pune, Noida...")
+            display_aff = aff_cities.copy()
+            if search_query.strip():
+                display_aff = display_aff[display_aff["City"].str.contains(search_query.strip(), case=False, na=False)]
+
+            st.dataframe(
+                display_aff[[
+                    "City", "Affordability_Pct", "Median_Price_Lakhs", "Budget_Margin_Lakhs",
+                    "Achievable_SqFt", "Median_Rate_SqFt", "Total_Listings", "Top_Localities"
+                ]],
+                use_container_width=True,
+                column_config={
+                    "City": "City",
+                    "Affordability_Pct": st.column_config.NumberColumn("Affordability Rate", format="%.1f%%"),
+                    "Median_Price_Lakhs": st.column_config.NumberColumn("Median Price", format="₹ %.2f L"),
+                    "Budget_Margin_Lakhs": st.column_config.NumberColumn("Budget Surplus", format="₹ %+.2f L"),
+                    "Achievable_SqFt": st.column_config.NumberColumn("Est. Area for Budget", format="%d sq.ft."),
+                    "Median_Rate_SqFt": st.column_config.NumberColumn("Median Rate (₹/SqFt)", format="₹ %d"),
+                    "Total_Listings": st.column_config.NumberColumn("Market Sample", format="%d"),
+                    "Top_Localities": "Top Affordable Localities",
+                },
+            )
+
+            # Micro-Market Drilldown
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.subheader("Micro-Market Locality Drilldown")
+            st.caption("Inspect specific neighborhoods and localities within a city that offer listings matching your budget.")
+
+            drill_cities = sorted(aff_cities["City"].unique().tolist())
+            default_idx = drill_cities.index("Bangalore") if "Bangalore" in drill_cities else 0
+            selected_drill_city = st.selectbox("Select City for Locality Breakdown", drill_cities, index=default_idx)
+
+            loc_results = get_city_localities_in_budget(master_df, selected_drill_city, budget_val, bhk_sel)
+            if not loc_results.empty:
+                st.dataframe(
+                    loc_results,
+                    use_container_width=True,
+                    column_config={
+                        "Locality": "Locality / Micro-Market",
+                        "Affordable_Count": st.column_config.NumberColumn("Affordable Listings", format="%d"),
+                        "Avg_Price_Lakhs": st.column_config.NumberColumn("Avg Price (Lakhs)", format="₹ %.2f L"),
+                        "Median_Price_Lakhs": st.column_config.NumberColumn("Median Price (Lakhs)", format="₹ %.2f L"),
+                        "Avg_SqFt": st.column_config.NumberColumn("Avg Area", format="%d sq.ft."),
+                        "Avg_Rate_SqFt": st.column_config.NumberColumn("Avg Rate", format="₹ %d/sqft"),
+                    },
+                )
+            else:
+                st.info(f"No listings found in {selected_drill_city} for {bhk_sel} BHK within ₹ {budget_val} Lakhs.")
+        else:
+            st.warning("No cities found matching these exact criteria. Try adjusting the budget or minimum area.")
+    else:
+        st.warning("Master dataset not available. Run the pipeline to generate it.")
+
+
+# -----------------------------------------------------------------------------
+# TAB 3: City Price Index
+# -----------------------------------------------------------------------------
+with tab3:
     st.subheader("City Valuation Index")
     st.caption("Normalized price-to-rate metrics (Base 100.0 = National Median rate per sq.ft.) grouped by city and BHK.")
 
@@ -339,9 +512,9 @@ with tab2:
 
 
 # -----------------------------------------------------------------------------
-# TAB 3: Mortgage Calculator
+# TAB 4: Mortgage Calculator
 # -----------------------------------------------------------------------------
-with tab3:
+with tab4:
     st.subheader("Mortgage & Rental Yield Calculator")
     st.caption("Estimate monthly loan commitments and expected rental returns for the current property valuation.")
 
@@ -378,9 +551,9 @@ with tab3:
 
 
 # -----------------------------------------------------------------------------
-# TAB 4: Model Evaluation
+# TAB 5: Model Evaluation
 # -----------------------------------------------------------------------------
-with tab4:
+with tab5:
     st.subheader("Model Evaluation & Benchmarking")
     st.caption("Cross-validation and test set performance across Linear Regression, Random Forest, and XGBoost.")
 
@@ -415,9 +588,9 @@ with tab4:
 
 
 # -----------------------------------------------------------------------------
-# TAB 5: Feature Importance
+# TAB 6: Feature Importance
 # -----------------------------------------------------------------------------
-with tab5:
+with tab6:
     st.subheader("Feature Importance & Explainability")
     st.caption("Global feature importance and SHAP TreeExplainer summary plots.")
 
@@ -437,9 +610,9 @@ with tab5:
 
 
 # -----------------------------------------------------------------------------
-# TAB 6: Data & Exports
+# TAB 7: Data & Exports
 # -----------------------------------------------------------------------------
-with tab6:
+with tab7:
     st.subheader("Power BI Datasets & File Downloads")
     st.caption("Clean relational CSV files exported by the pipeline for Power BI or Tableau import:")
 

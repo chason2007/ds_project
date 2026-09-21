@@ -61,6 +61,7 @@ Evaluated across **29,216 cleaned residential listings** (80/20 train/test split
 │   ├── explain.py              # Feature importance and SHAP analysis
 │   ├── valuation_index.py      # City x BHK aggregation and test predictions
 │   ├── predict_service.py      # Inference service for real-time valuation
+│   ├── affordability.py        # Reverse affordability & deal arbitrage engine
 │   └── main.py                 # Pipeline execution runner
 └── outputs/
     ├── charts/                 # Saved diagnostic visualizations (PNG)
@@ -91,7 +92,8 @@ Launch the interactive web interface:
 streamlit run app.py
 ```
 Open `http://localhost:8501` in your browser. The dashboard includes:
-- **Price Estimator**: Real-time property valuation, 80% interval bounds, and city comparisons.
+- **Price Estimator & Deal Valuation**: Real-time property valuation, 80% interval bounds, and an active listing **Deal Valuation & Arbitrage Meter** (analyzes asking price vs fair value spread, deal rating 0-100, and market interval check).
+- **Reverse Affordability & City Matcher**: Budget-driven ranking engine discovering which Indian cities and micro-markets maximize purchasing power, floor area, and inventory for a target budget and BHK configuration.
 - **City Price Index**: Benchmark valuation index by city and BHK tier.
 - **Mortgage Calculator**: Estimated monthly EMI and rental yields.
 - **Model Evaluation**: Benchmark comparison charts, actual vs. predicted plots, and residual diagnostics.
