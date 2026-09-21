@@ -51,7 +51,7 @@ from src.main import run_pipeline
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="BharatVal | Real Estate Valuation Engine",
-    page_icon="🏢",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -309,18 +309,18 @@ st.markdown(
     """
     <div class="hero-banner">
         <div class="hero-title">
-            <span>🇮🇳 BharatVal Intelligence</span>
+            <span>BharatVal Real Estate Intelligence</span>
         </div>
         <div class="hero-subtitle">
             Enterprise Automated Real Estate Valuation Index, Predictive Pricing & Investment Analytics
             trained on 29,450+ residential properties across premier Indian urban centers.
         </div>
         <div class="hero-tags">
-            <span class="hero-pill">⚡ Real-Time XGBoost Engine</span>
-            <span class="hero-pill">🛡️ 80% Quantile Risk Bounds</span>
-            <span class="hero-pill">🏙️ 22+ Metro Markets</span>
-            <span class="hero-pill">📑 RERA & Resale Modeling</span>
-            <span class="hero-pill">📊 Power BI Relational Hub</span>
+            <span class="hero-pill">Real-Time XGBoost Engine</span>
+            <span class="hero-pill">80% Quantile Risk Bounds</span>
+            <span class="hero-pill">22+ Metro Markets</span>
+            <span class="hero-pill">RERA & Resale Modeling</span>
+            <span class="hero-pill">Power BI Relational Hub</span>
         </div>
     </div>
     """,
@@ -331,7 +331,7 @@ st.markdown(
 # Sidebar: Property Input Controls
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("### 🏡 Property Specifications")
+    st.markdown("### Property Specifications")
     st.caption("Adjust parameters to recalculate market value in real-time:")
 
     default_cities = sorted(TOP_CITIES)
@@ -391,12 +391,12 @@ except Exception as e:
 # Main Navigation Tabs
 # -----------------------------------------------------------------------------
 tabs = st.tabs([
-    "🏡 Live Valuation Appraisal",
-    "📈 Metro Valuation Index",
-    "💰 Mortgage & Investment ROI",
-    "📊 Model Benchmarking",
-    "🧠 Key Valuation Drivers (SHAP)",
-    "📥 Power BI Data Hub",
+    "Valuation Appraisal",
+    "Metro Valuation Index",
+    "Mortgage & Investment ROI",
+    "Model Benchmarking",
+    "Valuation Drivers (SHAP)",
+    "Power BI Data Hub",
 ])
 
 # =============================================================================
@@ -404,11 +404,11 @@ tabs = st.tabs([
 # =============================================================================
 with tabs[0]:
     # Quick Preset Bar
-    st.markdown("<div class='section-title'>⚡ Quick-Load Market Presets</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Market Presets</div>", unsafe_allow_html=True)
     st.caption("Click any preset to instantaneously populate specs and re-evaluate pricing:")
 
     pr_col1, pr_col2, pr_col3, pr_col4, pr_col5 = st.columns(5)
-    if pr_col1.button("🏢 Mumbai 2BHK (950 sqft)", use_container_width=True):
+    if pr_col1.button("Mumbai - 2 BHK (950 sqft)", use_container_width=True):
         st.session_state.city_input = "Mumbai"
         st.session_state.bhk_input = 2
         st.session_state.sqft_input = 950
@@ -416,7 +416,7 @@ with tabs[0]:
         st.session_state.rera_input = True
         st.rerun()
 
-    if pr_col2.button("🌳 Bangalore 3BHK (1,650 sqft)", use_container_width=True):
+    if pr_col2.button("Bangalore - 3 BHK (1,650 sqft)", use_container_width=True):
         st.session_state.city_input = "Bangalore"
         st.session_state.bhk_input = 3
         st.session_state.sqft_input = 1650
@@ -424,7 +424,7 @@ with tabs[0]:
         st.session_state.rera_input = True
         st.rerun()
 
-    if pr_col3.button("🌆 Gurgaon 4BHK (2,800 sqft)", use_container_width=True):
+    if pr_col3.button("Gurgaon - 4 BHK (2,800 sqft)", use_container_width=True):
         st.session_state.city_input = "Gurgaon"
         st.session_state.bhk_input = 4
         st.session_state.sqft_input = 2800
@@ -432,7 +432,7 @@ with tabs[0]:
         st.session_state.rera_input = True
         st.rerun()
 
-    if pr_col4.button("💻 Pune 2BHK (1,050 sqft)", use_container_width=True):
+    if pr_col4.button("Pune - 2 BHK (1,050 sqft)", use_container_width=True):
         st.session_state.city_input = "Pune"
         st.session_state.bhk_input = 2
         st.session_state.sqft_input = 1050
@@ -440,7 +440,7 @@ with tabs[0]:
         st.session_state.rera_input = True
         st.rerun()
 
-    if pr_col5.button("🏛️ Kolkata 3BHK (1,400 sqft)", use_container_width=True):
+    if pr_col5.button("Kolkata - 3 BHK (1,400 sqft)", use_container_width=True):
         st.session_state.city_input = "Kolkata"
         st.session_state.bhk_input = 3
         st.session_state.sqft_input = 1400
@@ -462,7 +462,7 @@ with tabs[0]:
                     <div class="price-display">{valuation_result["formatted_price"]}</div>
                     <div class="card-subtext">Base value: <strong>₹ {valuation_result["predicted_price_lakhs"]:.2f} Lakhs</strong></div>
                     <div style="margin-top: 10px;">
-                        <span class="spec-pill spec-pill-green">🎯 Champion XGBoost Predictor</span>
+                        <span class="spec-pill spec-pill-green">Champion XGBoost Predictor</span>
                     </div>
                 </div>
                 """,
@@ -477,7 +477,7 @@ with tabs[0]:
                     <div class="range-display">{valuation_result["formatted_lower"]}  ⟷  {valuation_result["formatted_upper"]}</div>
                     <div class="card-subtext">Quantile Interval (α=0.10 to α=0.90)</div>
                     <div style="margin-top: 10px;">
-                        <span class="spec-pill spec-pill-blue">🛡️ 77.84% Test Empirical Coverage</span>
+                        <span class="spec-pill spec-pill-blue">77.84% Test Empirical Coverage</span>
                     </div>
                 </div>
                 """,
@@ -492,7 +492,7 @@ with tabs[0]:
                     <div class="rate-display">₹ {valuation_result["price_per_sqft"]:,.0f}</div>
                     <div class="card-subtext">per square foot over <strong>{square_ft:,.0f} sq.ft.</strong></div>
                     <div style="margin-top: 10px;">
-                        <span class="spec-pill">📐 {layout_type} Layout</span>
+                        <span class="spec-pill">{layout_type} Layout</span>
                     </div>
                 </div>
                 """,
@@ -502,15 +502,15 @@ with tabs[0]:
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Specifications Pill Strip
-        st.markdown("<div class='section-title'>📋 Active Appraisal Parameters</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Active Appraisal Parameters</div>", unsafe_allow_html=True)
         spec_badges = [
-            f"📍 Metro: <strong>{selected_city}</strong>",
-            f"🛏️ Configuration: <strong>{bhk_no} BHK ({layout_type})</strong>",
-            f"📐 Area: <strong>{square_ft:,.0f} Sq.Ft.</strong>",
-            f"💼 Seller: <strong>{seller_clean}</strong>",
-            f"📑 RERA: <strong>{'Approved' if is_rera else 'Unapproved'}</strong>",
-            f"🔑 Possession: <strong>{'Ready to Move' if is_ready else 'Under Construction'}</strong>",
-            f"🏷️ Market: <strong>{'Resale' if is_resale else 'Direct Booking'}</strong>",
+            f"Metro: <strong>{selected_city}</strong>",
+            f"Configuration: <strong>{bhk_no} BHK ({layout_type})</strong>",
+            f"Area: <strong>{square_ft:,.0f} Sq.Ft.</strong>",
+            f"Seller: <strong>{seller_clean}</strong>",
+            f"RERA: <strong>{'Approved' if is_rera else 'Unapproved'}</strong>",
+            f"Possession: <strong>{'Ready to Move' if is_ready else 'Under Construction'}</strong>",
+            f"Market: <strong>{'Resale' if is_resale else 'Direct Booking'}</strong>",
         ]
         st.markdown(
             f"""
@@ -522,7 +522,7 @@ with tabs[0]:
         )
 
         # Multi-Metro Benchmark: What would this property cost in other cities?
-        st.markdown("<div class='section-title'>🌐 Cross-Metro Comparative Valuation</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Cross-Metro Comparative Valuation</div>", unsafe_allow_html=True)
         st.caption(f"Fair market value simulation for this exact **{bhk_no} BHK ({square_ft:,.0f} Sq.Ft.)** specification across top Indian cities:")
 
         comp_cities = ["Mumbai", "Bangalore", "Pune", "Noida", "Gurgaon", "Chennai", "Kolkata", "Hyderabad"]
@@ -550,7 +550,7 @@ with tabs[0]:
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Dynamic Price vs Area Sensitivity Simulation
-        st.markdown(f"<div class='section-title'>📈 Real-Time Area Sensitivity Curve ({selected_city} — {bhk_no} BHK)</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='section-title'>Real-Time Area Sensitivity Curve ({selected_city} — {bhk_no} BHK)</div>", unsafe_allow_html=True)
         st.caption(f"Continuous pricing curve across varying property dimensions in **{selected_city}** with 80% interval bands:")
 
         sim_sqfts = [600, 900, 1200, 1500, 1800, 2200, 2800, 3500]
@@ -581,7 +581,7 @@ with tabs[0]:
 # TAB 2: Metro Valuation Index
 # =============================================================================
 with tabs[1]:
-    st.markdown("<div class='section-title'>📈 Indian Metro Real Estate Valuation Index</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Indian Metro Real Estate Valuation Index</div>", unsafe_allow_html=True)
     st.caption("Normalized price-to-rate indices (Base 100.0 = National Median ₹/SqFt) across Indian urban micro-markets.")
 
     val_idx_df = get_valuation_index()
@@ -593,7 +593,7 @@ with tabs[1]:
             st.image(str(top6_chart), caption="BHK Tier Valuation Multipliers: Top 6 Indian Metros", use_container_width=True)
 
         st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-title'>🔍 Filter & Search Metro Index Directory</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>Filter & Search Metro Index Directory</div>", unsafe_allow_html=True)
 
         c1, c2, c3 = st.columns([2, 1.5, 1.5])
         available_cities = sorted(val_idx_df["City"].unique().tolist())
@@ -630,7 +630,7 @@ with tabs[1]:
 # TAB 3: Mortgage & Investment ROI
 # =============================================================================
 with tabs[2]:
-    st.markdown("<div class='section-title'>💰 Mortgage EMI & Real Estate Investment Yield Calculator</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Mortgage EMI & Real Estate Investment Yield Calculator</div>", unsafe_allow_html=True)
     st.caption("Calculate monthly home loan commitments, down payment requirements, and estimated rental yield based on your active property appraisal:")
 
     if valuation_result:
@@ -711,14 +711,14 @@ with tabs[2]:
             )
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.info(f"💡 **Affordability Note:** A total loan of **₹ {loan_amt/100000:.2f} Lakhs** requires a minimum recommended net household income of approximately **₹ {emi_amt * 2:,.0f} / month** (assuming 50% EMI-to-income ratio).")
+        st.info(f"**Affordability Note:** A total loan of **₹ {loan_amt/100000:.2f} Lakhs** requires a minimum recommended net household income of approximately **₹ {emi_amt * 2:,.0f} / month** (assuming 50% EMI-to-income ratio).")
 
 
 # =============================================================================
 # TAB 4: Model Benchmarking
 # =============================================================================
 with tabs[3]:
-    st.markdown("<div class='section-title'>📊 Multi-Model Performance Scorecard</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Multi-Model Performance Scorecard</div>", unsafe_allow_html=True)
     st.caption("Rigorous cross-validation benchmark comparing Ordinary Least Squares, Random Forest, and XGBoost:")
 
     metrics_df = get_model_metrics()
@@ -765,7 +765,7 @@ with tabs[3]:
 # TAB 5: Valuation Drivers & SHAP
 # =============================================================================
 with tabs[4]:
-    st.markdown("<div class='section-title'>🧠 Key Valuation Drivers & Explainable AI (SHAP)</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Key Valuation Drivers & Explainable AI (SHAP)</div>", unsafe_allow_html=True)
     st.caption("Feature attribution ranking the structural, spatial, and geographic factors that govern property prices in India:")
 
     fi_col1, fi_col2 = st.columns(2)
@@ -778,7 +778,7 @@ with tabs[4]:
         fi_col2.image(str(shap_chart), caption="SHAP TreeExplainer Impact Distribution", use_container_width=True)
 
     st.markdown("<hr style='margin: 20px 0;'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>🏆 Top 20 Valuation Driver Rankings</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Top 20 Valuation Driver Rankings</div>", unsafe_allow_html=True)
     
     fi_df = get_feature_importance()
     if not fi_df.empty:
@@ -797,7 +797,7 @@ with tabs[4]:
 # TAB 6: Power BI Data Hub & Pipeline Trigger
 # =============================================================================
 with tabs[5]:
-    st.markdown("<div class='section-title'>📥 Power BI & Tableau Relational Ingestion Hub</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Power BI & Tableau Relational Ingestion Hub</div>", unsafe_allow_html=True)
     st.caption("Curated, non-empty, relational CSV tables ready for direct drag-and-drop ingestion into Power BI:")
 
     pbi_files = [
@@ -817,7 +817,7 @@ with tabs[5]:
             col_d2.caption(f"{desc} ({f_size_kb:,.1f} KB)")
             with open(fpath, "rb") as f:
                 col_d3.download_button(
-                    label="⬇️ Download CSV",
+                    label="Download CSV",
                     data=f.read(),
                     file_name=fname,
                     mime="text/csv",
@@ -827,14 +827,14 @@ with tabs[5]:
             st.markdown("<hr style='margin: 8px 0;'>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div class='section-title'>🔄 Pipeline Retraining Trigger</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>Pipeline Retraining Trigger</div>", unsafe_allow_html=True)
     st.caption("Re-execute the automated pipeline across all 29,450+ listings to regenerate models, charts, and CSVs:")
 
-    if st.button("🚀 Trigger Full End-to-End Retraining Run", type="primary", use_container_width=True):
+    if st.button("Trigger Full End-to-End Retraining Run", type="primary", use_container_width=True):
         with st.spinner("Retraining pipeline on Indian real estate listings..."):
             try:
                 run_pipeline()
-                st.success("✅ Retraining complete! All models and datasets updated.")
+                st.success("Retraining complete. All models and datasets updated.")
                 st.rerun()
             except Exception as e:
                 st.error(f"Pipeline error: {e}")
