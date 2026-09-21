@@ -1,0 +1,50 @@
+All-India Multi-City House Price Prediction Dataset
+========================================================================
+Dataset Overview:
+Contains 29,451 residential real estate property listings across India's
+major metropolitan and Tier-1/Tier-2 urban centers (Mumbai, Bangalore, Pune,
+Noida/Delhi-NCR, Kolkata, Chennai, Hyderabad, Jaipur, Ahmedabad, etc.).
+
+Target Variable:
+----------------
+TARGET(PRICE_IN_LACS)  : Total transaction / asking price in Indian Lakhs (₹ 100,000 INR).
+                         e.g., 55.0 = ₹ 55,00,000 (₹ 55 Lakhs)
+                         e.g., 185.0 = ₹ 1,85,00,000 (₹ 1.85 Crore)
+
+Feature Attributes:
+-------------------
+POSTED_BY              : Category of the entity listing the property:
+                         - Owner (Direct private owner)
+                         - Dealer (Real estate broker / channel partner)
+                         - Builder (Property developer / construction firm)
+
+UNDER_CONSTRUCTION     : Binary construction status:
+                         - 1: Property is currently under construction
+                         - 0: Construction completed
+
+RERA                   : Real Estate Regulatory Authority approval status:
+                         - 1: RERA registered & approved project
+                         - 0: Non-RERA or uncertified property
+
+BHK_NO.                : Number of bedrooms (Bedroom-Hall-Kitchen configuration),
+                         typically ranging from 1 to 8 BHK.
+
+BHK_OR_RK              : Property layout style:
+                         - BHK: Standard Bedroom, Hall, Kitchen apartment/villa
+                         - RK: Studio Room-Kitchen configuration
+
+SQUARE_FT              : Total covered / carpet / super built-up area in square feet.
+
+READY_TO_MOVE          : Possession readiness:
+                         - 1: Ready for immediate possession
+                         - 0: Future handover date
+
+RESALE                 : Transaction market type:
+                         - 1: Secondary resale market
+                         - 0: Primary market (fresh developer booking)
+
+ADDRESS                : Geographical location string in "Locality, City" format.
+                         e.g., "Whitefield,Bangalore", "Kharghar,Navi Mumbai", "Sector-134 Noida,Noida"
+
+LONGITUDE              : Geographic longitude coordinate of the property location.
+LATITUDE               : Geographic latitude coordinate of the property location.
