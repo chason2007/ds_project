@@ -288,6 +288,36 @@ with tabs[0]:
         spec_col3.metric("RERA Status", "✅ Approved" if is_rera else "⚠️ Unapproved")
         spec_col4.metric("Seller Listing", seller_clean)
 
+        st.caption("👈 *Adjust any input in the **Left Sidebar** (click the **>** arrow if collapsed) to see the valuation recalculate in real-time.*")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Dynamic Price vs Area Sensitivity Simulation
+        st.markdown(f"#### 📈 Live Area Sensitivity Curve ({selected_city} — {bhk_no} BHK)")
+        st.caption(f"Simulated price progression across varying square footages in **{selected_city}** using the trained XGBoost model:")
+        
+        sim_sqfts = [600, 900, 1200, 1500, 1800, 2200, 2800, 3500]
+        sim_data = []
+        for s in sim_sqfts:
+            res_sim = service.predict(
+                city=selected_city,
+                bhk_no=int(bhk_no),
+                square_ft=float(s),
+                posted_by=seller_clean,
+                bhk_or_rk=layout_type,
+                rera=1 if is_rera else 0,
+                ready_to_move=1 if is_ready else 0,
+                resale=1 if is_resale else 0,
+                under_construction=1 if is_uc else 0,
+            )
+            sim_data.append({
+                "Area (Sq.Ft.)": s,
+                "Predicted Price (₹ Lakhs)": res_sim["predicted_price_lakhs"],
+                "Lower 80% Bound": res_sim["lower_bound_lakhs"],
+                "Upper 80% Bound": res_sim["upper_bound_lakhs"],
+            })
+        sim_df = pd.DataFrame(sim_data).set_index("Area (Sq.Ft.)")
+        st.line_chart(sim_df[["Predicted Price (₹ Lakhs)", "Lower 80% Bound", "Upper 80% Bound"]])
+
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Diagnostic Visualizations from Training
