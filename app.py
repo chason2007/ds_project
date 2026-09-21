@@ -103,45 +103,57 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# Data & Cache Loaders
+# Data Loaders (Direct file readers to prevent stale cache issues)
 # -----------------------------------------------------------------------------
-@st.cache_data
 def get_model_metrics() -> pd.DataFrame:
     metrics_file = POWERBI_DIR / "model_metrics.csv"
     if metrics_file.exists():
-        return pd.read_csv(metrics_file)
+        try:
+            return pd.read_csv(metrics_file)
+        except Exception:
+            pass
     return pd.DataFrame()
 
 
-@st.cache_data
 def get_valuation_index() -> pd.DataFrame:
     val_file = POWERBI_DIR / "valuation_index.csv"
     if val_file.exists():
-        return pd.read_csv(val_file)
+        try:
+            df = pd.read_csv(val_file)
+            if "City" in df.columns:
+                return df
+        except Exception:
+            pass
     return pd.DataFrame()
 
 
-@st.cache_data
 def get_feature_importance() -> pd.DataFrame:
     fi_file = POWERBI_DIR / "feature_importance.csv"
     if fi_file.exists():
-        return pd.read_csv(fi_file)
+        try:
+            return pd.read_csv(fi_file)
+        except Exception:
+            pass
     return pd.DataFrame()
 
 
-@st.cache_data
 def get_predictions() -> pd.DataFrame:
     pred_file = POWERBI_DIR / "predictions.csv"
     if pred_file.exists():
-        return pd.read_csv(pred_file)
+        try:
+            return pd.read_csv(pred_file)
+        except Exception:
+            pass
     return pd.DataFrame()
 
 
-@st.cache_data
 def get_master_dataset_sample() -> pd.DataFrame:
     master_file = POWERBI_DIR / "cleaned_engineered_dataset.csv"
     if master_file.exists():
-        return pd.read_csv(master_file, nrows=100)
+        try:
+            return pd.read_csv(master_file, nrows=100)
+        except Exception:
+            pass
     return pd.DataFrame()
 
 
@@ -298,7 +310,7 @@ with tabs[1]:
 
     val_idx_df = get_valuation_index()
 
-    if not val_idx_df.empty:
+    if not val_idx_df.empty and "City" in val_idx_df.columns:
         # Multi-metro comparison visual
         top6_chart = CHARTS_DIR / "valuation_index_top6.png"
         if top6_chart.exists():
