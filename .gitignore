@@ -19,3 +19,14 @@ ENV/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Documentation, Reports & Presentation Guides
+*.docx
+*.doc
+*.pdf
+*.pptx
+report.docx
+report_TEMPLATE.docx
+PRESENTATION_GUIDE.md
+docs/
+documentation/

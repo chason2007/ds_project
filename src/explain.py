@@ -8,6 +8,13 @@ import logging
 from pathlib import Path
 from typing import List, Any
 
+# Ensure UTF-8 stdout encoding on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Ensure project root is in sys.path for direct module execution
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
