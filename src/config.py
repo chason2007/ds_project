@@ -1,8 +1,3 @@
-"""
-Pipeline Configuration module for All-India Real Estate Valuation and Price Prediction Engine.
-Defines system paths, modeling constants, column schemas, and city groupings.
-"""
-
 from pathlib import Path
 
 # Base Paths

@@ -1,15 +1,9 @@
-"""
-Data Loader module for All-India Real Estate Valuation and Price Prediction Engine.
-Responsible for downloading (if missing), loading, and validating the Indian housing dataset.
-"""
-
 import os
 import sys
 import urllib.request
 import logging
 from pathlib import Path
 
-# Ensure project root is in sys.path for direct module execution
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -44,21 +38,10 @@ def load_raw_data(
     data_path: Path = RAW_DATA_PATH,
     auto_download: bool = True,
 ) -> pd.DataFrame:
-    """
-    Loads the raw All-India House Price train dataset from local CSV, downloading it if missing.
-
-    Parameters:
-        data_path: Local path to train.csv.
-        auto_download: Whether to automatically download missing dataset files.
-
-    Returns:
-        pd.DataFrame: Raw dataset containing 29,451 property records.
-    """
     needs_download = False
     if not data_path.exists():
         needs_download = True
     else:
-        # Check if the existing file is the Indian dataset
         try:
             sample_df = pd.read_csv(data_path, nrows=5)
             if RAW_TARGET not in sample_df.columns and TARGET not in sample_df.columns:
@@ -77,7 +60,6 @@ def load_raw_data(
     df = pd.read_csv(data_path)
     logger.info(f"Loaded raw Indian housing dataset from {data_path} with shape: {df.shape}")
 
-    # Validate target presence
     if RAW_TARGET not in df.columns and TARGET not in df.columns:
         raise ValueError(f"Neither '{RAW_TARGET}' nor '{TARGET}' found in dataset columns.")
 

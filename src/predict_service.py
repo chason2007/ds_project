@@ -50,11 +50,11 @@ CITY_COORDINATES = {
 }
 
 
-class IndianValuationService:
+class BhoomIQValuationService:
     """
-    Cached model inference service for property valuation.
+    Cached model inference service for BHOOMIQ property valuation.
     """
-    _instance: Optional["IndianValuationService"] = None
+    _instance: Optional["BhoomIQValuationService"] = None
 
     def __init__(self):
         self.model = None
@@ -72,14 +72,14 @@ class IndianValuationService:
             self.q_lower = joblib.load(MODELS_DIR / "quantile_lower.joblib")
             self.q_upper = joblib.load(MODELS_DIR / "quantile_upper.joblib")
             self.feature_columns = joblib.load(MODELS_DIR / "model_feature_columns.joblib")
-            logger.info("Successfully loaded Indian valuation models into memory.")
+            logger.info("Successfully loaded BHOOMIQ valuation models into memory.")
         except Exception as e:
             logger.warning(f"Models not fully loaded yet: {e}")
 
     @classmethod
-    def get_instance(cls) -> "IndianValuationService":
+    def get_instance(cls) -> "BhoomIQValuationService":
         if cls._instance is None:
-            cls._instance = IndianValuationService()
+            cls._instance = BhoomIQValuationService()
         return cls._instance
 
     def predict(
@@ -182,3 +182,7 @@ class IndianValuationService:
             "bhk_no": bhk_no,
             "square_ft": square_ft,
         }
+
+
+# Alias for backward compatibility
+IndianValuationService = BhoomIQValuationService

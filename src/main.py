@@ -1,7 +1,7 @@
 """
-Main pipeline execution script.
+BHOOMIQ — Main Pipeline Execution Engine.
 Runs data loading, preprocessing, feature engineering, model training,
-and evaluation for the Indian housing price dataset.
+quantile bounds estimation, and evaluation for BHOOMIQ Real Estate Valuation Platform.
 """
 
 import sys

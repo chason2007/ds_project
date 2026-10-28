@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Thin entrypoint script for the Automated Real Estate Valuation Index and Price Prediction Engine.
+Thin entrypoint script for BHOOMIQ - Real Estate Valuation & Market Intelligence Engine.
 Execution:
     python run.py
 """
