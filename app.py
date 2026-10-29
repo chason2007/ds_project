@@ -619,7 +619,7 @@ if pred_min and pred_max:
         vi_chart_path = CHARTS_DIR / "valuation_index_top6.png"
         if vi_chart_path.exists():
             with st.expander("📈 View Multi-Tier Benchmark Index (Top 6 Metros vs National Baseline)"):
-                st.image(str(vi_chart_path), use_column_width=True, caption="Figure: Valuation Index by BHK tier across top 6 metros (Base 100 = National Median ₹/sqft)")
+                st.image(str(vi_chart_path), use_container_width=True, caption="Figure: Valuation Index by BHK tier across top 6 metros (Base 100 = National Median ₹/sqft)")
 
     # -------------------------------------------------------------------------
     # TAB 3: BHOOMIQ Affordability & Budget Matcher
@@ -735,7 +735,7 @@ if pred_min and pred_max:
         chart_filename, chart_desc = diag_options[selected_diag]
         chart_file_path = CHARTS_DIR / chart_filename
         if chart_file_path.exists():
-            st.image(str(chart_file_path), use_column_width=True, caption=chart_desc)
+            st.image(str(chart_file_path), use_container_width=True, caption=chart_desc)
             st.info(f"💡 **Viva Defense Note**: {chart_desc}")
         else:
             st.warning(f"Visualization '{chart_filename}' is not found in outputs/charts/. Run 'python run.py' to generate.")
